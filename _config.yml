@@ -1,0 +1,26 @@
+title: Ground Truth
+description: >-
+  The engineering publication by Teramind Engineering. Real war stories on
+  AI-native development, distributed systems and security engineering:
+  the decisions, the numbers and the parts that broke.
+url: "https://dmitryelisov.github.io"
+baseurl: "/ground-truth-blog"
+lang: en
+
+theme: minima
+plugins:
+  - jekyll-feed
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+permalink: /:year/:month/:title/
+header_pages:
+  - about.md
+
+minima:
+  date_format: "%Y-%m-%d"
+
+# Shown under every article. Talent first: the publication exists to show work worth joining.
+cta:
+  careers: "https://www.teramind.co/careers/"
+  demo: "https://www.teramind.co/demo-request/"
