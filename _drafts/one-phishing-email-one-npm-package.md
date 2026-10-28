@@ -6,6 +6,7 @@ description: >-
   pnpm now block, what they still don't, and the two config changes that cover most of the gap.
 author: "NAME NEEDED — AMA #7 presenter"
 pillar: Security engineering
+image: /assets/img/one-phishing-email-cover.png
 tags: [npm, supply-chain, security, pnpm, vscode]
 faq:
   - q: "What is the Shai-Hulud worm?"
@@ -35,9 +36,12 @@ faq:
       or about older npm versions still running in CI images.
   - q: "Should I turn off auto-update for VS Code and Cursor extensions?"
     a: >-
-      Yes, on developer machines. An extension is a package with full access to your
-      workspace, and auto-update installs whatever its publisher ships, the same day, with no
-      review. Set `"extensions.autoUpdate": false` and update deliberately.
+      On developer machines, yes. An extension is a package with full access to your
+      workspace, and auto-update installs whatever its publisher ships with no review. Recent
+      VS Code builds wait 12 hours before auto-installing an update
+      (`extensions.autoUpdateDelay`). That helps, but it is a shorter window than most teams
+      give npm packages. Either set `"extensions.autoUpdate": false` and update deliberately,
+      or raise the delay to a few days.
 ---
 
 The entry point is boring. One maintainer gets a convincing phishing email. Their npm credentials go to someone else. A patch release appears, then another, and every machine that resolves a fresh version pulls it in without anyone deciding to.
@@ -56,6 +60,11 @@ Shai-Hulud is the name for a family of npm worms. The first wave hit in Septembe
 4. **Exfiltrate in public.** Create a new public GitHub repository under the victim's own account and commit the stolen secrets to it. A repo you didn't create, appearing on your account, is the alarm.
 5. **Spread.** Log in to npm with the stolen token, list every other package the victim maintains, inject the same payload, publish. Use stolen GitHub tokens to push workflows into the organisation's repositories, so the compromise moves into CI.
 6. **Burn the house down if it fails.** In the November wave, if the worm could not steal credentials or set up exfiltration, it tried to overwrite and delete every writable file in the user's home directory.
+
+<figure>
+  <img src="{{ '/assets/img/shai-hulud-flow.svg' | relative_url }}" alt="The Shai-Hulud loop: phish a maintainer, publish a poisoned patch, a fresh install runs it, harvest secrets, exfiltrate them to a public repo, spread through the victim's other packages and CI, and back to step two. A release-age gate sits before the install; npm 12 and pnpm turn install scripts off by default. If nothing can be stolen, the November 2025 wave wipes the home directory.">
+  <figcaption>The loop. Each stolen token is a new entry point. The green markers are the two places the 2026 defaults now cut in.</figcaption>
+</figure>
 
 None of it is clever. Every step uses a capability the developer's machine already grants to any package it installs.
 
@@ -97,6 +106,15 @@ minimumReleaseAgeExclude:
   - some-package
 ```
 
+This is what it looks like when it works. We set a three-day gate and asked npm for a TypeScript nightly published the day before:
+
+<figure>
+  <img src="{{ '/assets/img/npm-min-release-age.png' | relative_url }}" alt="Terminal: with min-release-age=3 in .npmrc, npm install typescript@7.1.0-dev.20261027.1 fails with ETARGET, no matching version with a date before 10/25/2026. npm install typescript@next succeeds and npm ls shows typescript@7.0.2.">
+  <figcaption>Real output, npm 11.17, 2026-10-28. One line, the path to the local debug log, is removed.</figcaption>
+</figure>
+
+Two things to notice. An exact version that is too young fails loudly, with `ETARGET`. A tag or a range does not fail. npm quietly picks something old enough, so here `@next` came back as `7.0.2` from July. That is the behaviour you want, but it means the gate can silently hold back an update you were expecting.
+
 Current pnpm documents a default of 1440 minutes (one day). Older pnpm versions shipped with the gate off, so set it explicitly rather than trusting whatever version your CI image has. Yarn and Bun have equivalents with their own names and units; check the docs for the version you run.
 
 The trade-off is real: a security fix also waits. That is what the exclude list is for. One to three days is a common window; the right number is "longer than it takes someone else to notice".
@@ -105,17 +123,28 @@ The trade-off is real: a security fix also waits. That is what the exclude list 
 
 This is the one almost nobody has thought about.
 
-An editor extension is a package. It runs with access to your workspace, your terminal and whatever tokens are lying around in it. VS Code and Cursor both **auto-update extensions by default** — which means a compromised extension release becomes code execution on every developer machine the same day, with no lockfile, no review and no release-age gate.
+An editor extension is a package. It runs with access to your workspace, your terminal and whatever tokens are lying around in it. VS Code and Cursor both **auto-update extensions by default**. That means a compromised extension release becomes code execution on every developer machine, with no lockfile and no review.
 
-In `settings.json`:
+VS Code has started to hedge. Recent builds wait 12 hours after an update is published before installing it automatically:
 
-```json
+<figure>
+  <img src="{{ '/assets/img/vscode-extensions-auto-update.png' | relative_url }}" alt="VS Code settings: Extensions: Auto Update is set to on; Extensions: Auto Update Delay is 12 hours, with the description that it helps avoid installing potentially problematic updates immediately after release.">
+  <figcaption>The defaults today: auto-update on, with a 12-hour delay. Screenshot from vscode.dev, 2026-10-28.</figcaption>
+</figure>
+
+Twelve hours is a release-age gate, just a short one. That is less than most teams would accept for an npm package. Pick one of two settings in `settings.json`:
+
+```jsonc
 {
-  "extensions.autoUpdate": false
+  // Strictest: nothing updates until you decide it should
+  "extensions.autoUpdate": false,
+
+  // Or keep auto-update and give the ecosystem three days to notice
+  "extensions.autoUpdateDelay": 72
 }
 ```
 
-Then update extensions deliberately, the way you'd bump a dependency. If that feels like friction, it is the same friction you already accept everywhere else in the supply chain.
+Cursor is built on VS Code and reads the same extension settings. Check that your version has the delay setting before you rely on it. If you turn auto-update off, update extensions deliberately, the way you'd bump a dependency. That is the same friction you already accept everywhere else in the supply chain.
 
 ## What the 2026 defaults fixed — and what they didn't
 
@@ -125,7 +154,7 @@ That closes the exact path both Shai-Hulud waves used. It is a genuine improveme
 
 1. **Code that runs on import.** Install scripts were the easy path, not the only one. A payload in the module body runs the first time your test suite, dev server or build imports the package. Turning off install scripts moves the moment of execution; it doesn't remove it.
 2. **The npm in your CI image.** The default only applies where npm 12 actually runs. Images pinned to npm 10 or 11, old `node` base images and global tools keep the old behaviour. And npm 12 *skips* an unapproved script with a warning; the install still succeeds. If you want CI to fail instead, turn on `strict-allow-scripts`.
-3. **Editor extensions.** None of the package-manager changes touch them. See change two.
+3. **Editor extensions.** None of the package-manager changes touch them, and VS Code's own 12-hour delay is short. See change two.
 4. **Stolen tokens.** Once a worm has a GitHub token, it doesn't need npm at all — it can push a workflow. Trusted publishing proves *which* workflow published a package, not that the workflow is honest.
 
 The old rule was "assume install-time code runs". The updated one is: **assume the package's code runs, at some point, on a machine with secrets on it.** Then make that machine boring to compromise.
@@ -153,7 +182,7 @@ Prevention reduces the odds; it doesn't make them zero. What decides how bad the
 | Change | Where | Effort |
 |---|---|---|
 | Release-age gate (1–3 days) | `.npmrc` or `pnpm-workspace.yaml` | 2 minutes |
-| Extension auto-update off | editor `settings.json` | 1 minute |
+| Extension auto-update off, or a delay of 72 hours or more | editor `settings.json` | 1 minute |
 | npm 12 or current pnpm in CI, fail on unapproved scripts | CI images, `strict-allow-scripts` / `strictDepBuilds` | an afternoon |
 | Passphrases on SSH keys; tokens out of plain-text files | every developer machine | an hour per person |
 | Untrusted packages tried in a disposable environment | team habit | none, once it's normal |

@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 600" width="960" height="600" role="img" aria-labelledby="t d" font-family="-apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <title id="t">How the Shai-Hulud worm moves through npm</title>
+  <desc id="d">Six steps in a loop: phish a maintainer, publish a poisoned patch, a fresh install runs it, harvest secrets, exfiltrate them to a public repository, then spread by republishing the maintainer's other packages and pushing CI workflows, which feeds back into step two. If no secrets are found, the November 2025 wave tried to wipe the home directory. Two defences are marked: a release-age gate before installs, and install scripts turned off by default in npm 12 and pnpm.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4b5563"/>
+    </marker>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b3261e"/>
+    </marker>
+    <style>
+      .box{fill:#f6f7f9;stroke:#c9ced6;stroke-width:1.5}
+      .n{fill:#b3261e;font-weight:700;font-size:15px}
+      .h{fill:#111827;font-weight:700;font-size:16px}
+      .s{fill:#4b5563;font-size:13px}
+      .ln{stroke:#4b5563;stroke-width:2;fill:none}
+      .def{fill:#e8f5ec;stroke:#1a7f37;stroke-width:1.5}
+      .dt{fill:#1a7f37;font-weight:700;font-size:13px}
+      .bad{fill:#fdecea;stroke:#b3261e;stroke-width:1.5}
+      .bt{fill:#b3261e;font-size:13px}
+      .loop{fill:#4b5563;font-size:13px;font-style:italic}
+    </style>
+  </defs>
+
+  <rect width="960" height="600" fill="#ffffff"/>
+
+  <!-- row 1 -->
+  <rect class="box" x="30" y="80" width="260" height="100" rx="10"/>
+  <text x="50" y="114"><tspan class="n">1</tspan><tspan class="h" dx="10">Phish a maintainer</tspan></text>
+  <text class="s" x="50" y="140">npm credentials go to someone else</text>
+
+  <rect class="box" x="350" y="80" width="260" height="100" rx="10"/>
+  <text x="370" y="114"><tspan class="n">2</tspan><tspan class="h" dx="10">Publish a poisoned patch</tspan></text>
+  <text class="s" x="370" y="140">a lifecycle script in a new version</text>
+
+  <rect class="box" x="670" y="80" width="260" height="100" rx="10"/>
+  <text x="690" y="114"><tspan class="n">3</tspan><tspan class="h" dx="10">A fresh install runs it</tspan></text>
+  <text class="s" x="690" y="140">postinstall (Sep 2025),</text>
+  <text class="s" x="690" y="158">preinstall (Nov 2025)</text>
+
+  <path class="ln" d="M290,130 L346,130" marker-end="url(#a)"/>
+  <path class="ln" d="M610,130 L666,130" marker-end="url(#a)"/>
+
+  <!-- defence 1: release-age gate, between 2 and 3 -->
+  <rect class="def" x="548" y="22" width="180" height="34" rx="17"/>
+  <text class="dt" x="638" y="44" text-anchor="middle">⛔ release-age gate</text>
+  <path d="M638,56 L638,128" stroke="#1a7f37" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- 3 -> 4 -->
+  <path class="ln" d="M800,180 L800,346" marker-end="url(#a)"/>
+  <!-- defence 2: install scripts off -->
+  <rect class="def" x="812" y="230" width="140" height="52" rx="12"/>
+  <text class="dt" x="882" y="252" text-anchor="middle">⛔ install scripts</text>
+  <text class="dt" x="882" y="270" text-anchor="middle">off: npm 12, pnpm</text>
+
+  <!-- row 2 -->
+  <rect class="box" x="670" y="350" width="260" height="100" rx="10"/>
+  <text x="690" y="384"><tspan class="n">4</tspan><tspan class="h" dx="10">Harvest secrets</tspan></text>
+  <text class="s" x="690" y="410">.npmrc tokens, env vars,</text>
+  <text class="s" x="690" y="428">GitHub tokens, cloud keys</text>
+
+  <rect class="box" x="350" y="350" width="260" height="100" rx="10"/>
+  <text x="370" y="384"><tspan class="n">5</tspan><tspan class="h" dx="10">Exfiltrate in public</tspan></text>
+  <text class="s" x="370" y="410">a new public repo appears</text>
+  <text class="s" x="370" y="428">on the victim's own account</text>
+
+  <rect class="box" x="30" y="350" width="260" height="100" rx="10"/>
+  <text x="50" y="384"><tspan class="n">6</tspan><tspan class="h" dx="10">Spread</tspan></text>
+  <text class="s" x="50" y="410">republish every package they own;</text>
+  <text class="s" x="50" y="428">push workflows into CI</text>
+
+  <path class="ln" d="M670,400 L614,400" marker-end="url(#a)"/>
+  <path class="ln" d="M350,400 L294,400" marker-end="url(#a)"/>
+
+  <!-- loop 6 -> 2 -->
+  <path class="ln" d="M160,350 L160,265 L480,265 L480,184" marker-end="url(#a)"/>
+  <text class="loop" x="180" y="255">each stolen token is a new entry point</text>
+
+  <!-- fallback -->
+  <path d="M800,450 L800,506" stroke="#b3261e" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+  <text class="bt" x="812" y="484">nothing to steal?</text>
+  <rect class="bad" x="560" y="510" width="370" height="56" rx="10"/>
+  <text class="bt" x="745" y="534" text-anchor="middle" font-weight="700">Nov 2025 wave: wipe the home directory</text>
+  <text class="bt" x="745" y="553" text-anchor="middle">overwrite and delete every writable file</text>
+
+  <text x="30" y="588" fill="#9ca3af" font-size="12">Ground Truth · by Teramind Engineering · sources: Unit 42, npm and pnpm docs</text>
+</svg>
