@@ -3,7 +3,7 @@ description: >-
   The engineering publication by Teramind Engineering. Real war stories on
   AI-native development, distributed systems and security engineering:
   the decisions, the numbers and the parts that broke.
-url: "https://dmitryelisov.github.io"
+url: "https://groundtruth-blog.github.io"
 baseurl: "/ground-truth-blog"
 lang: en
 
