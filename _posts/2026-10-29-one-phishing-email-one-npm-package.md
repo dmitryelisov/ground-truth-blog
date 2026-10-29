@@ -4,7 +4,7 @@ title: "One phishing email, one npm package, every machine"
 description: >-
   How the Shai-Hulud worm spreads through npm, what the 2026 defaults in npm 12 and
   pnpm now block, what they still don't, and the two config changes that cover most of the gap.
-author: "NAME NEEDED — AMA #7 presenter"
+author: "Teramind Team"
 pillar: Security engineering
 image: /assets/img/one-phishing-email-cover.png
 tags: [npm, supply-chain, security, pnpm, vscode]

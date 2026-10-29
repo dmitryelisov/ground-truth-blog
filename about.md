@@ -14,4 +14,4 @@ We write about three things:
 - **Distributed systems:** the backend decisions and what they cost us.
 - **Security engineering:** building systems that produce evidence you can defend.
 
-Each article is written in the name of the engineer who gave the talk. What we leave out: customer names, infrastructure specifics, and anything that would hand an attacker a map.
+Articles are signed by the team. What we leave out: customer names, infrastructure specifics, and anything that would hand an attacker a map.
